@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 🇮🇩 Bench Indo Edition (v2025.11b)
-# Author: PimpiTheCat
+# Author: pimpiTheCat
 # Based on: Teddysun’s bench.sh (https://teddysun.com/444.html)
 # Repository: https://github.com/pimpithecat/bench
 #
@@ -121,7 +121,7 @@ print_intro() {
     clear
     echo "──────────────────────────────────────────────────────────────"
     echo " 🌏 Bench Indo Edition (v2025.11b)"
-    echo " Created by Aisha | Based on Teddysun's bench.sh"
+    echo " Created by pimpiTheCat | Based on Teddysun's bench.sh"
     echo "──────────────────────────────────────────────────────────────"
 }
 
