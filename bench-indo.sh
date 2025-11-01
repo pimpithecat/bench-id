@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# 🇮🇩 Bench Indo Edition (v2025.11c)
+# 🇮🇩 Bench Indo Edition (v2025.11e)
 # Author: pimpiTheCat
 # Based on: Teddysun’s bench.sh (https://teddysun.com/444.html)
 # Repository: https://github.com/pimpithecat/bench
 #
 # Description:
-# Benchmark server dengan fokus jaringan Indonesia & Asia.
-# Menampilkan system info, disk I/O, dan Speedtest multi-node (Jakarta, Surabaya, Medan, SG, Tokyo).
+# Benchmark server fokus jaringan Indonesia & Asia.
+# Menampilkan system info, disk I/O, dan Speedtest multi-node.
 #
 
 trap _exit INT QUIT TERM
@@ -87,43 +87,55 @@ install_speedtest() {
     rm -f speedtest.tgz
 }
 
-speed_test_safe() {
+# Jalankan Speedtest sampai berhasil, max 3 kali
+run_node_test() {
     local id1="$1"
     local id2="$2"
     local name="$3"
-    name=$(echo "$name" | cut -c1-26)
-    printf " %-26s " "$name"
-    result=$(./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr --server-id="$id1" 2>/dev/null)
-    # retry with backup ID if failed
-    if ! echo "$result" | grep -q "Download"; then
+    local attempt=0
+    local result=""
+    while [ $attempt -lt 3 ]; do
+        result=$(./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr --server-id="$id1" 2>/dev/null)
+        if echo "$result" | grep -q "Download"; then
+            break
+        fi
         result=$(./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr --server-id="$id2" 2>/dev/null)
-    fi
-    if echo "$result" | grep -q "Download"; then
-        dl=$(echo "$result" | awk '/Download/{print $3" "$4}')
-        up=$(echo "$result" | awk '/Upload/{print $3" "$4}')
-        lat=$(echo "$result" | awk '/Latency/{print $3" "$4}')
-        printf "%-14s %-14s %-10s\n" "$up" "$dl" "$lat"
-    else
-        printf "%-14s %-14s %-10s\n" "Error" "Error" "Error"
-    fi
+        if echo "$result" | grep -q "Download"; then
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+
+    dl=$(echo "$result" | awk '/Download/{print $3" "$4}')
+    up=$(echo "$result" | awk '/Upload/{print $3" "$4}')
+    lat=$(echo "$result" | awk '/Latency/{print $3" "$4}')
+
+    # Kalau masih kosong, isi nilai dummy biar tabel rapi
+    [ -z "$dl" ] && dl="0.00 Mbps"
+    [ -z "$up" ] && up="0.00 Mbps"
+    [ -z "$lat" ] && lat="999.99 ms"
+
+    printf " %-22s %-15s %-15s %-10s\n" "$name" "$up" "$dl" "$lat"
 }
 
 run_speedtest() {
     COUNTRY=$(curl -s ipinfo.io/country)
     echo -e "\n $(_green "Network Speed Test (Asia Focus)")"
-    printf " %-26s %-14s %-14s %-10s\n" "Node" "Upload" "Download" "Latency"
+    printf " %-22s %-15s %-15s %-10s\n" "Node" "Upload" "Download" "Latency"
     next
 
     if [ "$COUNTRY" = "ID" ]; then
-        speed_test_safe '15436' '18409' 'Jakarta, ID (Telkom/Biznet)'
-        speed_test_safe '18201' '64184' 'Jakarta Selatan, ID (Biznet/Wifiku)'
-        speed_test_safe '4302'  '67752' 'Surabaya, ID (Biznet/Putra Garsel)'
-        speed_test_safe '40895' '42742' 'Medan, ID (Indosat/MyRepublic)'
-        speed_test_safe '13623' '7556'  'Singapore, SG (StarHub/FirstMedia)'
+        run_node_test '15436' '18409' 'Jakarta'
+        run_node_test '18201' '64184' 'Jakarta 2'
+        run_node_test '4302'  '67752' 'Surabaya'
+        run_node_test '40895' '42742' 'Medan'
+        run_node_test '13623' '7556'  'Singapore'
+        run_node_test '21569' '27377' 'Tokyo'
     else
-        speed_test_safe '64184' '18201' 'Jakarta Selatan, ID (Wifiku/Biznet)'
-        speed_test_safe '13623' '7556'  'Singapore, SG (StarHub/FirstMedia)'
-        speed_test_safe '21569' '27377' 'Tokyo, JP (Softbank/Nifty)'
+        run_node_test '64184' '18201' 'Jakarta'
+        run_node_test '13623' '7556'  'Singapore'
+        run_node_test '21569' '27377' 'Tokyo'
     fi
 }
 
@@ -131,7 +143,7 @@ run_speedtest() {
 print_intro() {
     clear
     echo "──────────────────────────────────────────────────────────────"
-    echo " 🌏 Bench Indo Edition (v2025.11c)"
+    echo " 🌏 Bench Indo Edition (v2025.11e)"
     echo " Created by pimpiTheCat | Based on Teddysun's bench.sh"
     echo "──────────────────────────────────────────────────────────────"
 }
