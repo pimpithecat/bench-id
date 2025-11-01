@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 🇮🇩 Bench Indo Edition (v2025.11b)
+# 🇮🇩 Bench Indo Edition (v2025.11c)
 # Author: pimpiTheCat
 # Based on: Teddysun’s bench.sh (https://teddysun.com/444.html)
 # Repository: https://github.com/pimpithecat/bench
@@ -87,13 +87,18 @@ install_speedtest() {
     rm -f speedtest.tgz
 }
 
-speed_test() {
-    local id="$1"
-    local name="$2"
-    name=$(echo "$name" | cut -c1-26) # truncate if too long
+speed_test_safe() {
+    local id1="$1"
+    local id2="$2"
+    local name="$3"
+    name=$(echo "$name" | cut -c1-26)
     printf " %-26s " "$name"
-    result=$(./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr --server-id="$id" 2>/dev/null)
-    if [ $? -eq 0 ]; then
+    result=$(./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr --server-id="$id1" 2>/dev/null)
+    # retry with backup ID if failed
+    if ! echo "$result" | grep -q "Download"; then
+        result=$(./speedtest-cli/speedtest --progress=no --accept-license --accept-gdpr --server-id="$id2" 2>/dev/null)
+    fi
+    if echo "$result" | grep -q "Download"; then
         dl=$(echo "$result" | awk '/Download/{print $3" "$4}')
         up=$(echo "$result" | awk '/Upload/{print $3" "$4}')
         lat=$(echo "$result" | awk '/Latency/{print $3" "$4}')
@@ -104,23 +109,29 @@ speed_test() {
 }
 
 run_speedtest() {
+    COUNTRY=$(curl -s ipinfo.io/country)
     echo -e "\n $(_green "Network Speed Test (Asia Focus)")"
     printf " %-26s %-14s %-14s %-10s\n" "Node" "Upload" "Download" "Latency"
     next
-    speed_test '15436' 'Jakarta, ID (Telkom)'
-    speed_test '18201' 'Jakarta, ID (Biznet)'
-    speed_test '64184' 'Jakarta Selatan, ID (Wifiku)'
-    speed_test '4302'  'Surabaya, ID (Biznet)'
-    speed_test '40895' 'Medan, ID (Indosat)'
-    speed_test '13623' 'Singapore, SG (StarHub)'
-    speed_test '21569' 'Tokyo, JP (Softbank)'
+
+    if [ "$COUNTRY" = "ID" ]; then
+        speed_test_safe '15436' '18409' 'Jakarta, ID (Telkom/Biznet)'
+        speed_test_safe '18201' '64184' 'Jakarta Selatan, ID (Biznet/Wifiku)'
+        speed_test_safe '4302'  '67752' 'Surabaya, ID (Biznet/Putra Garsel)'
+        speed_test_safe '40895' '42742' 'Medan, ID (Indosat/MyRepublic)'
+        speed_test_safe '13623' '7556'  'Singapore, SG (StarHub/FirstMedia)'
+    else
+        speed_test_safe '64184' '18201' 'Jakarta Selatan, ID (Wifiku/Biznet)'
+        speed_test_safe '13623' '7556'  'Singapore, SG (StarHub/FirstMedia)'
+        speed_test_safe '21569' '27377' 'Tokyo, JP (Softbank/Nifty)'
+    fi
 }
 
 # ---------- OUTPUT ----------
 print_intro() {
     clear
     echo "──────────────────────────────────────────────────────────────"
-    echo " 🌏 Bench Indo Edition (v2025.11b)"
+    echo " 🌏 Bench Indo Edition (v2025.11c)"
     echo " Created by pimpiTheCat | Based on Teddysun's bench.sh"
     echo "──────────────────────────────────────────────────────────────"
 }
