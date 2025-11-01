@@ -7,4 +7,4 @@ Based on [Teddysun’s Bench.sh](https://teddysun.com/444.html), modified for lo
 ## 🚀 Quick Run
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/pimpithecat/bench-id/refs/heads/main/bench-indo.sh | bash
+wget -qO- https://pimpithecat.github.io/bench.sh | bash
